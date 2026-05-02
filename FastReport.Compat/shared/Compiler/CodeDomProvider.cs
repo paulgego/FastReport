@@ -334,7 +334,7 @@ namespace FastReport.Code.CodeDom.Compiler
                 DebugMessage("IN AssemblyName");
                 var assemblyName = new AssemblyName(reference);
 
-                result = UserResolveMetadataReference(assemblyName);
+                result = UserResolveMetadataReference(assemblyName, ResolveMetadataReference);
                 if(result != null)
                 {
                     DebugMessage($"MetadataReference for assembly {reference} resolved by user");
@@ -473,14 +473,14 @@ namespace FastReport.Code.CodeDom.Compiler
         }
 
 
-        private static MetadataReference UserResolveMetadataReference(AssemblyName assembly)
+        private static MetadataReference UserResolveMetadataReference(AssemblyName assembly, Func<AssemblyName, MetadataReference> resolveMetadataReference)
         {
             if(AssemblyLoadResolver != null)
             {
                 return AssemblyLoadResolver.LoadManagedLibrary(assembly);
             }
 
-            return ResolveMetadataReference?.Invoke(assembly);
+            return resolveMetadataReference?.Invoke(assembly);
         }
 
         private static async ValueTask<MetadataReference> UserResolveMetadataReferenceAsync(AssemblyName assemblyName, CancellationToken ct)
@@ -567,7 +567,7 @@ namespace FastReport.Code.CodeDom.Compiler
             {
                 DebugMessage("Not implemented assembly load from SFA");
                 // try load from external source
-                result = UserResolveMetadataReference(assembly.GetName());
+                result = UserResolveMetadataReference(assembly.GetName(), ResolveMetadataReference);
 
                 if(result == null)
                     throw;
@@ -595,7 +595,9 @@ namespace FastReport.Code.CodeDom.Compiler
         }
 
 
+#pragma warning disable CA1859 // Use concrete types when possible for improved performance
         private static unsafe MetadataReference GetMetadataReferenceInSingleFileApp(Assembly assembly)
+#pragma warning restore CA1859 // Use concrete types when possible for improved performance
         {
             DebugMessage($"TRY IN UNSAFE METHOD {assembly.GetName().Name}");
             assembly.TryGetRawMetadata(out byte* blob, out int length);
